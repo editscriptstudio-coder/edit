@@ -92,6 +92,14 @@ function reelSrc(folder, file) {
   return VIDEO_URLS[`${folder}/${file}`] ?? "";
 }
 
+// Cloudinary can derive a JPG frame from a hosted video on the fly; used as
+// the <video> poster so mobile shows a real thumbnail instead of a blank
+// box + generic play icon before playback starts.
+function posterFor(videoSrc) {
+  if (!videoSrc) return undefined;
+  return videoSrc.replace("/video/upload/", "/video/upload/so_0/").replace(/\.mp4($|\?)/, ".jpg$1");
+}
+
 const THUMBNAIL_FALLBACKS = ["hqdefault.jpg", "mqdefault.jpg", "default.jpg"];
 
 function YoutubeThumbnail({ videoId, alt }) {
@@ -159,7 +167,7 @@ function EditExample({ video, onSeeMore }) {
 
   return (
     <article className="portfolio__edit-card">
-      <video ref={videoRef} className="portfolio__edit-video" muted loop playsInline preload="metadata" onClick={togglePlayback}>
+      <video ref={videoRef} className="portfolio__edit-video" muted loop playsInline preload="metadata" poster={posterFor(video.src)} onClick={togglePlayback}>
         <source src={video.src} type="video/mp4" />
       </video>
       <button className="portfolio__sound-toggle" type="button" onClick={toggleSound} aria-label={isMuted ? `Turn on sound for ${video.title}` : `Mute ${video.title}`}>
