@@ -64,17 +64,17 @@ export default function Hero() {
           <h1 className="hero__lines">
             <span className="hero__line">
               <span className="hero__reveal">
-                we build <span className="hero__mark">stories</span>
+                we don't just edit videos, we build <span className="hero__mark">stories</span>
               </span>
             </span>
             <span className="hero__line">
               <span className="hero__reveal">
-                we create <span className="hero__mark">identity</span>
+                we don't just design, we create <span className="hero__mark">identity</span>
               </span>
             </span>
             <span className="hero__line">
               <span className="hero__reveal">
-                we shape <span className="hero__mark">powerful ideas</span>
+                we don't just write, we shape <span className="hero__mark">powerful ideas</span>
               </span>
             </span>
           </h1>
