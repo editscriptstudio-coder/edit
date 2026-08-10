@@ -57,26 +57,28 @@ const services = [
   },
 ];
 
+// Videos are hosted on Cloudinary (too large for the git repo / GitHub's
+// 100MB limit).
 const showcaseVideos = [
   {
     title: "AI Video Editing",
     detail: "AI-assisted visuals with a polished final cut.",
-    src: "/AI.mp4",
+    src: "https://res.cloudinary.com/kswndjtj/video/upload/v1786387685/f7a5937b1514ff4b.mp4",
   },
   {
     title: "Before & After",
     detail: "See how raw footage becomes a refined story.",
-    src: "/before%20and%20after.mp4",
+    src: "https://res.cloudinary.com/kswndjtj/video/upload/v1786389029/1b5b6445c7dba68d.mp4",
   },
   {
     title: "Daily Vlogs",
     detail: "Fast-paced edits that keep every moment moving.",
-    src: "/daily.mp4",
+    src: "https://res.cloudinary.com/kswndjtj/video/upload/v1786387798/683c6897022d0147.mp4",
   },
   {
     title: "Reels",
     detail: "Short-form edits designed to stop the scroll.",
-    src: "/reels.mp4",
+    src: "https://res.cloudinary.com/kswndjtj/video/upload/v1786389140/e5626be31428b58d.mp4",
   },
 ];
 

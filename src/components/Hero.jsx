@@ -108,7 +108,7 @@ export default function Hero() {
                 poster="/ceo-photo.png"
                 onClick={togglePlayback}
               >
-                <source src="/for%20website.mp4" type="video/mp4" />
+                <source src="https://res.cloudinary.com/kswndjtj/video/upload/v1786389007/a72bbdbbaa557cb3.mp4" type="video/mp4" />
               </video>
               <button
                 className="hero__sound-toggle"
