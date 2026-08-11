@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import "./Hero.css";
+import { notifyMuted, notifyUnmuted } from "../audioCoordinator";
 
 export default function Hero() {
   const videoRef = useRef(null);
@@ -45,6 +46,11 @@ export default function Hero() {
 
     video.muted = !video.muted;
     setIsMuted(video.muted);
+    if (video.muted) {
+      notifyMuted(video);
+    } else {
+      notifyUnmuted(video, () => setIsMuted(true));
+    }
     video.play().then(() => setIsPaused(false)).catch(() => {});
   };
 

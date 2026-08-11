@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import "./Portfolio.css";
+import { notifyMuted, notifyUnmuted } from "../audioCoordinator";
 
 const projects = [
   { id: "u7Z8HUbvzaY", title: "Daily Vlog", tag: "Vlog" },
@@ -162,6 +163,11 @@ function EditExample({ video, onSeeMore }) {
     if (!element) return;
     element.muted = !element.muted;
     setIsMuted(element.muted);
+    if (element.muted) {
+      notifyMuted(element);
+    } else {
+      notifyUnmuted(element, () => setIsMuted(true));
+    }
     element.play().then(() => setIsPaused(false)).catch(() => {});
   };
 
