@@ -108,6 +108,24 @@ padding: clamp(56px, 7vw, 96px) clamp(24px, 5vw, 96px);  font-family: "Inter", s
   z-index: 1;
 }
 
+.portfolio__nav,
+.portfolio__reel-viewer-nav,
+.portfolio__reel-viewer-close,
+.portfolio__lightbox-close,
+.portfolio__reels-back,
+.portfolio__video-button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.portfolio__nav:focus:not(:focus-visible),
+.portfolio__reel-viewer-nav:focus:not(:focus-visible),
+.portfolio__reel-viewer-close:focus:not(:focus-visible),
+.portfolio__lightbox-close:focus:not(:focus-visible),
+.portfolio__reels-back:focus:not(:focus-visible),
+.portfolio__video-button:focus:not(:focus-visible) {
+  outline: none;
+}
+
 .portfolio__nav {
   position: absolute;
   top: 50%;
