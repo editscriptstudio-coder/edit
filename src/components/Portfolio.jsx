@@ -126,7 +126,7 @@ function YoutubeThumbnail({ videoId, alt }) {
   );
 }
 
-function EditExample({ video, onSeeMore }) {
+function EditExample({ video, onSeeMore, onOpen }) {
   const videoRef = useRef(null);
   const [isMuted, setIsMuted] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
@@ -146,17 +146,6 @@ function EditExample({ video, onSeeMore }) {
     return () => observer.disconnect();
   }, []);
 
-  const togglePlayback = () => {
-    const element = videoRef.current;
-    if (!element) return;
-    if (element.paused) {
-      element.play().then(() => setIsPaused(false)).catch(() => {});
-    } else {
-      element.pause();
-      setIsPaused(true);
-    }
-  };
-
   const toggleSound = (event) => {
     event.stopPropagation();
     const element = videoRef.current;
@@ -173,7 +162,7 @@ function EditExample({ video, onSeeMore }) {
 
   return (
     <article className="portfolio__edit-card">
-      <video ref={videoRef} className="portfolio__edit-video" muted loop playsInline preload="metadata" poster={posterFor(video.src)} onClick={togglePlayback}>
+      <video ref={videoRef} className="portfolio__edit-video" muted loop playsInline preload="metadata" poster={posterFor(video.src)} onClick={onOpen}>
         <source src={video.src} type="video/mp4" />
       </video>
       <button className="portfolio__sound-toggle" type="button" onClick={toggleSound} aria-label={isMuted ? `Turn on sound for ${video.title}` : `Mute ${video.title}`}>
@@ -197,12 +186,134 @@ function EditExample({ video, onSeeMore }) {
   );
 }
 
+function ReelViewer({ cards, startIndex, onClose }) {
+  const [index, setIndex] = useState(startIndex);
+  const [isMuted, setIsMuted] = useState(true);
+  const videoRef = useRef(null);
+  const touchStartX = useRef(null);
+
+  const card = cards[index];
+
+  const showPrev = () => setIndex((current) => (current - 1 + cards.length) % cards.length);
+  const showNext = () => setIndex((current) => (current + 1) % cards.length);
+
+  useEffect(() => {
+    setIsMuted(true);
+  }, [index]);
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+      if (event.key === "ArrowRight") showNext();
+      if (event.key === "ArrowLeft") showPrev();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [cards.length, onClose]);
+
+  useEffect(() => {
+    const element = videoRef.current;
+    if (!element) return undefined;
+    element.play().catch(() => {});
+    return () => notifyMuted(element);
+  }, [index]);
+
+  const toggleSound = (event) => {
+    event.stopPropagation();
+    const element = videoRef.current;
+    if (!element) return;
+    element.muted = !element.muted;
+    setIsMuted(element.muted);
+    if (element.muted) {
+      notifyMuted(element);
+    } else {
+      notifyUnmuted(element, () => setIsMuted(true));
+    }
+    element.play().catch(() => {});
+  };
+
+  const togglePlayback = () => {
+    const element = videoRef.current;
+    if (!element) return;
+    if (element.paused) element.play().catch(() => {});
+    else element.pause();
+  };
+
+  const onTouchStart = (event) => {
+    touchStartX.current = event.touches[0].clientX;
+  };
+
+  const onTouchEnd = (event) => {
+    if (touchStartX.current === null) return;
+    const deltaX = event.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(deltaX) < 40) return;
+    if (deltaX < 0) showNext();
+    else showPrev();
+  };
+
+  return (
+    <div className="portfolio__reel-viewer" onClick={onClose}>
+      <div
+        className="portfolio__reel-viewer-inner"
+        onClick={(event) => event.stopPropagation()}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
+        <button className="portfolio__reel-viewer-close" type="button" onClick={onClose} aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+        </button>
+
+        {cards.length > 1 && (
+          <>
+            <button className="portfolio__reel-viewer-nav portfolio__reel-viewer-nav--prev" type="button" onClick={showPrev} aria-label="Previous reel">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M15 5L8 12L15 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
+            <button className="portfolio__reel-viewer-nav portfolio__reel-viewer-nav--next" type="button" onClick={showNext} aria-label="Next reel">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M9 5L16 12L9 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
+          </>
+        )}
+
+        <video
+          key={card.key}
+          ref={videoRef}
+          className="portfolio__reel-viewer-video"
+          autoPlay
+          muted
+          loop
+          playsInline
+          poster={posterFor(card.src)}
+          onClick={togglePlayback}
+        >
+          <source src={card.src} type="video/mp4" />
+        </video>
+
+        <button
+          className="portfolio__sound-toggle"
+          type="button"
+          onClick={toggleSound}
+          aria-label={isMuted ? `Turn on sound for ${card.title}` : `Mute ${card.title}`}
+        >
+          {isMuted ? "Unmute" : "Mute"}
+        </button>
+
+        <div className="portfolio__edit-overlay">
+          <h3>{card.title}</h3>
+          <p>{card.detail}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Portfolio() {
   const [playingId, setPlayingId] = useState(null);
   const [startIndex, setStartIndex] = useState(0);
   const [reelsView, setReelsView] = useState("main");
   const [editStartIndex, setEditStartIndex] = useState(0);
   const [editsPerView, setEditsPerView] = useState(4);
+  const [viewerIndex, setViewerIndex] = useState(null);
   const editTouchStartX = useRef(null);
 
   useEffect(() => {
@@ -215,6 +326,7 @@ export default function Portfolio() {
 
   useEffect(() => {
     setEditStartIndex(0);
+    setViewerIndex(null);
   }, [reelsView]);
 
   const activeCategory = reelsView === "main" ? null : reelCategories.find((category) => category.id === reelsView);
@@ -310,8 +422,13 @@ export default function Portfolio() {
           )}
 
           <div className="portfolio__edit-grid" onTouchStart={onEditTouchStart} onTouchEnd={onEditTouchEnd}>
-            {visibleEdits.map((video) => (
-              <EditExample key={video.key} video={video} onSeeMore={video.hasMore ? video.onSeeMore : null} />
+            {visibleEdits.map((video, offset) => (
+              <EditExample
+                key={video.key}
+                video={video}
+                onSeeMore={video.hasMore ? video.onSeeMore : null}
+                onOpen={() => setViewerIndex((editStartIndex + offset) % editCards.length)}
+              />
             ))}
           </div>
 
@@ -353,6 +470,10 @@ export default function Portfolio() {
           </button>
         </div>
       </div>
+
+      {viewerIndex !== null && (
+        <ReelViewer cards={editCards} startIndex={viewerIndex} onClose={() => setViewerIndex(null)} />
+      )}
 
       {playingProject && (
         <div className="portfolio__lightbox" onClick={() => setPlayingId(null)}>
