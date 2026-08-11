@@ -234,12 +234,24 @@ padding: clamp(56px, 7vw, 96px) clamp(24px, 5vw, 96px);  font-family: "Inter", s
   touch-action: pan-y;
 }
 
+.portfolio__reel-viewer-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.portfolio__reel-viewer-track:active {
+  cursor: grabbing;
+}
+
 .portfolio__reel-viewer-video {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  cursor: pointer;
   border-radius: 20px;
 }
 

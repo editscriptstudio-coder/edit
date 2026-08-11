@@ -190,7 +190,8 @@ function ReelViewer({ cards, startIndex, onClose }) {
   const [index, setIndex] = useState(startIndex);
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef(null);
-  const touchStartX = useRef(null);
+  const trackRef = useRef(null);
+  const dragState = useRef({ dragging: false, startX: 0, width: 0, moved: false });
 
   const card = cards[index];
 
@@ -218,6 +219,14 @@ function ReelViewer({ cards, startIndex, onClose }) {
     return () => notifyMuted(element);
   }, [index]);
 
+  // Reset the drag position instantly (no transition) whenever a new reel mounts.
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    track.style.transition = "none";
+    track.style.transform = "translateX(0px)";
+  }, [index]);
+
   const toggleSound = (event) => {
     event.stopPropagation();
     const element = videoRef.current;
@@ -233,33 +242,73 @@ function ReelViewer({ cards, startIndex, onClose }) {
   };
 
   const togglePlayback = () => {
+    if (dragState.current.moved) return;
     const element = videoRef.current;
     if (!element) return;
     if (element.paused) element.play().catch(() => {});
     else element.pause();
   };
 
-  const onTouchStart = (event) => {
-    touchStartX.current = event.touches[0].clientX;
+  const applyTransform = (px, withTransition) => {
+    const track = trackRef.current;
+    if (!track) return;
+    track.style.transition = withTransition ? "transform 220ms ease" : "none";
+    track.style.transform = `translateX(${px}px)`;
   };
 
-  const onTouchEnd = (event) => {
-    if (touchStartX.current === null) return;
-    const deltaX = event.changedTouches[0].clientX - touchStartX.current;
-    touchStartX.current = null;
-    if (Math.abs(deltaX) < 40) return;
-    if (deltaX < 0) showNext();
-    else showPrev();
+  const dragStart = (clientX) => {
+    if (cards.length < 2) return;
+    const track = trackRef.current;
+    dragState.current = { dragging: true, startX: clientX, width: track ? track.offsetWidth : 320, moved: false };
+  };
+
+  const dragMove = (clientX) => {
+    if (!dragState.current.dragging) return;
+    const delta = clientX - dragState.current.startX;
+    if (Math.abs(delta) > 6) dragState.current.moved = true;
+    applyTransform(delta, false);
+  };
+
+  const dragEnd = (clientX) => {
+    if (!dragState.current.dragging) return;
+    const delta = clientX - dragState.current.startX;
+    dragState.current.dragging = false;
+    const width = dragState.current.width || 320;
+    const threshold = Math.min(110, width * 0.22);
+
+    if (Math.abs(delta) > threshold) {
+      const goingNext = delta < 0;
+      applyTransform(goingNext ? -width : width, true);
+      window.setTimeout(() => {
+        if (goingNext) showNext();
+        else showPrev();
+      }, 200);
+    } else {
+      applyTransform(0, true);
+    }
+  };
+
+  const onTouchStart = (event) => dragStart(event.touches[0].clientX);
+  const onTouchMove = (event) => dragMove(event.touches[0].clientX);
+  const onTouchEnd = (event) => dragEnd(event.changedTouches[0].clientX);
+
+  const onMouseDown = (event) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    dragStart(event.clientX);
+    const onMouseMove = (moveEvent) => dragMove(moveEvent.clientX);
+    const onMouseUp = (upEvent) => {
+      dragEnd(upEvent.clientX);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
   };
 
   return (
     <div className="portfolio__reel-viewer" onClick={onClose}>
-      <div
-        className="portfolio__reel-viewer-inner"
-        onClick={(event) => event.stopPropagation()}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-      >
+      <div className="portfolio__reel-viewer-inner" onClick={(event) => event.stopPropagation()}>
         <button className="portfolio__reel-viewer-close" type="button" onClick={onClose} aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none"><path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
         </button>
@@ -275,19 +324,28 @@ function ReelViewer({ cards, startIndex, onClose }) {
           </>
         )}
 
-        <video
-          key={card.key}
-          ref={videoRef}
-          className="portfolio__reel-viewer-video"
-          autoPlay
-          muted
-          loop
-          playsInline
-          poster={posterFor(card.src)}
-          onClick={togglePlayback}
+        <div
+          className="portfolio__reel-viewer-track"
+          ref={trackRef}
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          onMouseDown={onMouseDown}
         >
-          <source src={card.src} type="video/mp4" />
-        </video>
+          <video
+            key={card.key}
+            ref={videoRef}
+            className="portfolio__reel-viewer-video"
+            autoPlay
+            muted
+            loop
+            playsInline
+            poster={posterFor(card.src)}
+            onClick={togglePlayback}
+          >
+            <source src={card.src} type="video/mp4" />
+          </video>
+        </div>
 
         <button
           className="portfolio__sound-toggle"
@@ -301,6 +359,15 @@ function ReelViewer({ cards, startIndex, onClose }) {
         <div className="portfolio__edit-overlay">
           <h3>{card.title}</h3>
           <p>{card.detail}</p>
+          {card.hasMore && (
+            <button
+              className="portfolio__edit-more"
+              type="button"
+              onClick={(event) => { event.stopPropagation(); card.onSeeMore(); }}
+            >
+              See more reels <span aria-hidden="true">→</span>
+            </button>
+          )}
         </div>
       </div>
     </div>
